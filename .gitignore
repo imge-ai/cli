@@ -1,0 +1,7 @@
+node_modules/
+.playwright-mcp/
+assets/demo-step-*.png
+dist/
+ui/dist/
+*.tgz
+.DS_Store
