@@ -13,7 +13,7 @@ const page = '<!doctype html><html><head><title>Store</title></head><body><h1>Sh
 const site = createServer((_req, res) => { res.setHeader('content-type', 'text/html'); res.end(page); });
 await new Promise(done => site.listen(0, '127.0.0.1', done));
 const url = `http://127.0.0.1:${site.address().port}/`;
-const home = await mkdtemp(join(tmpdir(), 'agent-replay-integration-'));
+const home = await mkdtemp(join(tmpdir(), 'imge-integration-'));
 const clients = [];
 let browser = null;
 
@@ -25,11 +25,11 @@ async function savedSteps() { const id = (await readdir(join(home, 'sessions')))
 
 try {
   if (mode === 'pass') {
-    const profile = await mkdtemp(join(tmpdir(), 'agent-replay-direct-'));
+    const profile = await mkdtemp(join(tmpdir(), 'imge-direct-'));
     const port = 39000 + Math.floor(Math.random() * 10000);
     browser = await chromium.launchPersistentContext(profile, { channel: 'chrome', headless: true, args: [`--remote-debugging-port=${port}`] });
     const direct = await connect('node', [resolve('node_modules/@playwright/mcp/cli.js'), `--cdp-endpoint=http://127.0.0.1:${port}`]);
-    const proxy = await connect('node', [resolve('dist/cli.js'), 'mcp'], { ...process.env, AGENT_REPLAY_HOME: home, AGENT_REPLAY_TASK: 'Try to add a product to cart' });
+    const proxy = await connect('node', [resolve('dist/cli.js'), 'mcp'], { ...process.env, IMGE_HOME: home, IMGE_TASK: 'Try to add a product to cart' });
     assert.deepEqual(await proxy.listTools(), await direct.listTools());
     const directNav = await direct.callTool({ name:'browser_navigate', arguments:{url} });
     const proxyNav = await proxy.callTool({ name:'browser_navigate', arguments:{url} });
@@ -55,7 +55,7 @@ try {
     assert.ok(saved.steps[3].failureReason && saved.steps[3].failureReason !== 'Action failed');
     assert.equal((await readdir(saved.dir)).filter(name => name.endsWith('.png')).length, 4);
   } else if (mode === 'privacy') {
-    const proxy = await connect('node', [resolve('dist/cli.js'), 'mcp'], { ...process.env, AGENT_REPLAY_HOME: home });
+    const proxy = await connect('node', [resolve('dist/cli.js'), 'mcp'], { ...process.env, IMGE_HOME: home });
     const nav = await proxy.callTool({name:'browser_navigate',arguments:{url}});
     const snapshot = view(nav);
     const password = 'secret-password-9341', card = '4111111111111111', cvc = '9186', expiry = '11/29';

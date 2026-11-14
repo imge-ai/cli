@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "agent-replay",
+      "name": "imge",
       "dependencies": {
         "@hono/node-server": "^1.19.9",
         "@modelcontextprotocol/sdk": "^1.32.2",

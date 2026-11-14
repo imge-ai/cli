@@ -7,5 +7,5 @@ export const PRODUCT_NAME = manifest.name;
 export const VERSION = manifest.version;
 export const PLAYER_PORT = 4747;
 export const ENV_PREFIX = PRODUCT_NAME.replace(/-/g, '_').toUpperCase();
-export const DATA_HOME = process.env[`${ENV_PREFIX}_HOME`] || join(homedir(), `.${PRODUCT_NAME}`);
+export const DATA_HOME = process.env[`${ENV_PREFIX}_HOME`] || join(homedir(), `.${PRODUCT_NAME}`, 'mcp');
 export const SESSIONS_DIR = join(DATA_HOME, 'sessions');

@@ -1,5 +1,5 @@
 {
-  "name": "agent-replay",
+  "name": "imge",
   "version": "0.1.0",
   "description": "Local session replay for browser agents",
   "type": "module",
@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "bin": {
-    "agent-replay": "dist/cli.js"
+    "imge": "dist/cli.js"
   },
   "files": ["dist", "ui/dist", "ui/src/FONT-LICENSE.txt", "README.md", "LICENSE", "assets/demo.gif"],
   "scripts": {
