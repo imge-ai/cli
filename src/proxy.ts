@@ -14,7 +14,7 @@ import type { Step, TargetInfo, Warning } from './schema.js';
 
 const require = createRequire(import.meta.url);
 const playwrightCli = join(dirname(require.resolve('@playwright/mcp/package.json')), 'cli.js');
-const OBSERVATION_TOOLS = new Set(['browser_snapshot','browser_find','browser_take_screenshot','browser_console_messages','browser_network_requests','browser_network_request']);
+const OBSERVATION_TOOLS = new Set(['browser_snapshot','browser_find','browser_take_screenshot','browser_console_messages','browser_network_requests','browser_network_request','browser_close','browser_install']);
 export const isActionTool = (name: string) => name.startsWith('browser_') && !OBSERVATION_TOOLS.has(name);
 
 function responseText(result: unknown): string {
