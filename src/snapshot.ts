@@ -1,7 +1,7 @@
 import type { TargetInfo, Warning } from './schema.js';
 
 export type SnapshotNode = { role: string; name: string; ref: string; line: string };
-const NODE = /^\s*-\s+([\w-]+)(?:\s+"((?:\\.|[^"])*)")?[^\n]*?\[ref=([^\]]+)\]/gm;
+const NODE = /^\s*-\s+(?:<changed>\s+)?([\w-]+)(?:\s+"((?:\\.|[^"])*)")?[^\n]*?\[ref=([^\]]+)\]/gm;
 
 export function extractAgentView(resultText: string): string {
   const marker = /^- Page Snapshot:|^### (?:Page )?Snapshot\s*$/m.exec(resultText);

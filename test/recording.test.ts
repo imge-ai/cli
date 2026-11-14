@@ -22,6 +22,7 @@ test('warning and snapshot merge logic', () => {
   expect(targetFromSnapshot({ref:'e2'}, first).warnings).toContain('same-name');
   expect(targetFromSnapshot({ref:'e4'}, first).warnings).toContain('unnamed');
   const merged = mergeSnapshotState(first, '- <changed> button "Add to cart" [active] [ref=e2]\n- ref=e3 [unchanged]\n- ref=e4 [unchanged]');
+  expect(targetFromSnapshot({ref:'e2'}, merged).target?.name).toBe('Add to cart');
   expect(targetFromSnapshot({ref:'e3'}, merged).target?.name).toBe('Add to cart');
 });
 test('sensitive field detection and argument masking', () => {
