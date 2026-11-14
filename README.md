@@ -6,15 +6,25 @@
 
 Session replay for browser agents, on your machine. No SDK, no account, no cloud.
 
+## Install in Codex
+
+Run these commands from this repository:
+
 ```bash
-# In this repository
 bun install
 bun run build
-node dist/cli.js setup
+codex mcp add agent-replay -- node "$PWD/dist/cli.js" mcp
+codex mcp get agent-replay
 node dist/cli.js
 ```
 
-`setup` prints ready-to-paste MCP snippets for Claude Code, Claude Desktop, Cursor, VS Code, and Codex. Confirm once to add them. Existing server entries are preserved and existing config files are backed up first. For example, on a local checkout:
+`codex mcp add` saves the MCP server in Codex's config. Codex starts the proxy when the agent calls its browser tools. The last command opens the session player at `http://localhost:4747`. Open a new Codex session and ask:
+
+> Use the agent-replay browser tools to open https://example.com and test the add-to-cart flow.
+
+The sentence in chat does not install anything; it tells Codex to use the already configured MCP tools. The first browser action creates a session. Refresh the player to see it. If `codex mcp get agent-replay` already shows the server, skip the `add` command. To configure Claude Code, Claude Desktop, Cursor, or VS Code instead, run `node dist/cli.js setup`; it prints config snippets and writes them only after confirmation, preserving existing entries and backing up existing files.
+
+For a manual MCP config, the command is:
 
 ```json
 {
