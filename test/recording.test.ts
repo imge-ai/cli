@@ -17,6 +17,7 @@ function integration(mode: string): Promise<void> {
 
 test('real Playwright MCP behavior and refs match with and without the proxy', async () => { await integration('pass'); }, 30000);
 test('real type and fill-form calls mask values and screenshot fields', async () => { await integration('privacy'); }, 30000);
+test('replay UI opens with a session and stops with MCP while keeping recordings', async () => { await integration('player'); }, 30000);
 test('warning and snapshot merge logic', () => {
   const first = '- button "Add to cart" [ref=e2]\n- button "Add to cart" [ref=e3]\n- button [ref=e4]';
   expect(targetFromSnapshot({ref:'e2'}, first).warnings).toContain('same-name');

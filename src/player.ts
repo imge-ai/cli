@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { listSessions, readSteps, sessionPath } from './storage.js';
-import { ENV_PREFIX, PLAYER_PORT, PRODUCT_NAME } from './config.js';
+import { ENV_PREFIX, PLAYER_PORT, PLAYER_URL, PRODUCT_NAME } from './config.js';
 
 const app = new Hono();
 const uiRoot = resolve(new URL('../ui/dist/', import.meta.url).pathname);
@@ -42,7 +42,7 @@ function openBrowser(url: string) {
 }
 
 export async function startPlayer(options: { quiet?: boolean } = {}): Promise<() => Promise<void>> {
-  const url = `http://localhost:${PLAYER_PORT}`;
+  const url = PLAYER_URL;
   const log = (message: string) => options.quiet ? console.error(message) : console.log(message);
   try {
     const response = await fetch(`http://127.0.0.1:${PLAYER_PORT}/api/meta`, { signal: AbortSignal.timeout(300) });

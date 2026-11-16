@@ -7,7 +7,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BrowserBridge } from './browser.js';
 import { startPlayer } from './player.js';
-import { ENV_PREFIX, PRODUCT_NAME, VERSION } from './config.js';
+import { ENV_PREFIX, PLAYER_URL, PRODUCT_NAME, VERSION } from './config.js';
 import { newSessionId, saveStep } from './storage.js';
 import { extractAgentView, mergeSnapshotState, targetFromSnapshot } from './snapshot.js';
 import { isSensitiveField, redactText, sanitizeArguments } from './security.js';
@@ -37,7 +37,7 @@ export async function serveProxy(extraArgs: string[] = []) {
   catch (error) { await bridge.close(); throw error; }
   const downstream = new Server({ name: PRODUCT_NAME, version: VERSION }, {
     capabilities: { tools: { listChanged: true } },
-    instructions: `imge records browser sessions locally. The replay interface starts automatically after the first browser action at http://localhost:4747. Show the user this Markdown link in your final response: [Open the imge session replay](http://localhost:4747).`,
+    instructions: `imge records browser sessions locally. The replay interface starts automatically after the first browser action at ${PLAYER_URL}. Show the user this Markdown link in your final response: [Open the imge session replay](${PLAYER_URL}).`,
   });
   const sessionId = newSessionId();
   let index = 0, lastSnapshot = '', firstUrl: string | null = null, playerStarted = false, closing: Promise<void> | null = null;

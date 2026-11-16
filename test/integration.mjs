@@ -75,6 +75,30 @@ try {
     let maskedPixels = 0;
     for(let i=0;i<data.length;i+=info.channels) if(data[i]===17 && data[i+1]===17 && data[i+2]===17) maskedPixels++;
     assert.ok(maskedPixels>1000, `Expected solid mask boxes, got ${maskedPixels} pixels`);
+  } else if (mode === 'player') {
+    const playerPort = 48000 + Math.floor(Math.random() * 10000);
+    const proxy = await connect('node', [resolve('dist/cli.js'), 'mcp'], { ...process.env, IMGE_HOME: home, IMGE_PLAYER_PORT: String(playerPort), IMGE_NO_OPEN:'1', IMGE_HEADLESS:'true' });
+    const nav = await proxy.callTool({name:'browser_navigate',arguments:{url}});
+    assert.match(resultText(nav), /Page URL:/);
+    let sessions = [];
+    for (let attempt=0; attempt<30; attempt++) {
+      try { sessions = await fetch(`http://127.0.0.1:${playerPort}/api/sessions`).then(response => response.json()); } catch {}
+      if (sessions.length) break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    assert.equal(sessions.length, 1, 'replay server exposes the saved session');
+    const steps = await fetch(`http://127.0.0.1:${playerPort}/api/sessions/${encodeURIComponent(sessions[0].id)}/steps`).then(response => response.json());
+    assert.equal(steps.length, 1, 'the replay page can load the recorded step');
+    await proxy.close();
+    clients.splice(clients.indexOf(proxy), 1);
+    let stopped = false;
+    for (let attempt=0; attempt<30; attempt++) {
+      try { await fetch(`http://127.0.0.1:${playerPort}/api/meta`); }
+      catch { stopped = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    assert.ok(stopped, 'replay server stops with the MCP process');
+    assert.ok((await readdir(join(home, 'sessions'))).length > 0, 'recorded sessions remain on disk');
   } else throw new Error('Unknown mode');
   console.log(`${mode} passed`);
 } finally {
