@@ -1,6 +1,6 @@
 import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { ENV_PREFIX, PRODUCT_NAME, SESSIONS_DIR } from './config.js';
@@ -27,10 +27,21 @@ function selected(args: string[]): Config[] {
   if (!client || (client !== 'all' && !configs.some(config => config.id === client))) throw new Error(`Unknown client: ${client}. Choose all, ${configs.map(config => config.id).join(', ')}.`);
   return client === 'all' ? configs : configs.filter(config => config.id === client);
 }
-function entry(config: Config) { return config.id === 'vs-code' ? { type:'stdio', ...launcher, tools:['*'] } : launcher; }
-function snippet(config: Config) {
-  if (config.kind === 'toml') return `[mcp_servers.${PRODUCT_NAME}]\ncommand = "npx"\nargs = ["--yes", "@imge/cli@latest", "mcp"]`;
-  return JSON.stringify({ [config.key!]: { [PRODUCT_NAME]: entry(config) } }, null, 2);
+function storageDir(args: string[]) {
+  const index = args.indexOf('--data-dir');
+  if (index < 0) return undefined;
+  const value = args[index + 1];
+  if (!value || value.startsWith('--')) throw new Error('--data-dir requires a path.');
+  return resolve(value);
+}
+function entry(config: Config, dataDir?: string) {
+  const env = dataDir ? { IMGE_HOME: dataDir } : {};
+  const base = { ...launcher, ...(Object.keys(env).length ? { env } : {}) };
+  return config.id === 'vs-code' ? { type:'stdio', ...base, tools:['*'] } : base;
+}
+function snippet(config: Config, dataDir?: string) {
+  if (config.kind === 'toml') return `[mcp_servers.${PRODUCT_NAME}]\ncommand = "npx"\nargs = ["--yes", "@imge/cli@latest", "mcp"]${dataDir ? `\nenv = { IMGE_HOME = ${JSON.stringify(dataDir)} }` : ''}`;
+  return JSON.stringify({ [config.key!]: { [PRODUCT_NAME]: entry(config, dataDir) } }, null, 2);
 }
 function stamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
 async function save(config: Config, original: string | null, updated: string) {
@@ -41,21 +52,22 @@ async function save(config: Config, original: string | null, updated: string) {
 
 export async function setup(args: string[] = []) {
   const targets = selected(args);
-  for (const config of targets) console.log(`\n${config.label} · ${config.file}\n${snippet(config)}\n`);
+  const dataDir = storageDir(args);
+  for (const config of targets) console.log(`\n${config.label} · ${config.file}\n${snippet(config, dataDir)}\n`);
   if (!args.includes('--yes') && !(await confirm(`Add imge to ${targets.map(config => config.label).join(', ')}?`))) return;
   for (const config of targets) {
     const original = await readFile(config.file, 'utf8').catch(() => null);
     if (config.kind === 'toml') {
       if (original && /^\[mcp_servers\.imge\]$/m.test(original)) { console.log(`${config.label}: already configured`); continue; }
       const separator = original ? (original.endsWith('\n') ? '\n' : '\n\n') : '';
-      await save(config, original, `${original || ''}${separator}${snippet(config)}\n`);
+      await save(config, original, `${original || ''}${separator}${snippet(config, dataDir)}\n`);
     } else {
       let data: Record<string, unknown>;
       try { data = original ? JSON.parse(original) as Record<string, unknown> : {}; }
       catch { console.error(`${config.label}: invalid JSON, skipped`); continue; }
       const servers = (data[config.key!] && typeof data[config.key!] === 'object' && !Array.isArray(data[config.key!])) ? data[config.key!] as Record<string, unknown> : {};
       if (PRODUCT_NAME in servers) { console.log(`${config.label}: already configured`); continue; }
-      data[config.key!] = { ...servers, [PRODUCT_NAME]: entry(config) };
+      data[config.key!] = { ...servers, [PRODUCT_NAME]: entry(config, dataDir) };
       await save(config, original, `${JSON.stringify(data, null, 2)}\n`);
     }
     console.log(`${config.label}: added${original !== null ? ' (backup saved)' : ''}`);

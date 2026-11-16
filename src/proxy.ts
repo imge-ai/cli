@@ -30,6 +30,7 @@ function shortFailure(text: string): string {
 
 export async function serveProxy(extraArgs: string[] = []) {
   const bridge = await BrowserBridge.start();
+  let stopPlayer: (() => Promise<void>) | null = null;
   const upstream = new Client({ name: PRODUCT_NAME, version: VERSION });
   const upstreamTransport = new StdioClientTransport({ command: process.execPath, args: [playwrightCli, `--cdp-endpoint=${bridge.endpoint}`, ...extraArgs], stderr: 'inherit' });
   try { await upstream.connect(upstreamTransport); }
@@ -39,7 +40,7 @@ export async function serveProxy(extraArgs: string[] = []) {
     instructions: `imge records browser sessions locally. The replay interface starts automatically after the first browser action at http://localhost:4747. Show the user this Markdown link in your final response: [Open the imge session replay](http://localhost:4747).`,
   });
   const sessionId = newSessionId();
-  let index = 0, lastSnapshot = '', firstUrl: string | null = null, playerStarted = false;
+  let index = 0, lastSnapshot = '', firstUrl: string | null = null, playerStarted = false, closing: Promise<void> | null = null;
   let pending: Promise<unknown> = Promise.resolve();
   downstream.setRequestHandler(ListToolsRequestSchema, async () => upstream.listTools());
   downstream.setRequestHandler(CallToolRequestSchema, async request => {
@@ -106,7 +107,7 @@ export async function serveProxy(extraArgs: string[] = []) {
       catch (error) { console.error(`${PRODUCT_NAME}: could not save step: ${error instanceof Error ? error.message : String(error)}`); }
       if (!playerStarted) {
         playerStarted = true;
-        try { await startPlayer({ quiet: true }); }
+        try { stopPlayer = await startPlayer({ quiet: true }); }
         catch (error) { console.error(`${PRODUCT_NAME}: replay UI failed to start: ${error instanceof Error ? error.message : String(error)}`); }
       }
       if (thrown) throw thrown;
@@ -115,7 +116,7 @@ export async function serveProxy(extraArgs: string[] = []) {
     pending = operation.catch(() => undefined);
     return operation;
   });
-  const close = async () => { await upstream.close().catch(() => {}); await bridge.close(); };
+  const close = () => closing ||= (async () => { await pending.catch(() => {}); await stopPlayer?.().catch(() => {}); await upstream.close().catch(() => {}); await bridge.close(); })();
   process.once('SIGINT', () => { void close().then(() => process.exit(0)); });
   process.once('SIGTERM', () => { void close().then(() => process.exit(0)); });
   await downstream.connect(new StdioServerTransport());

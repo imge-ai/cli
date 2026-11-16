@@ -25,10 +25,9 @@ export class BrowserBridge {
     const profileDir = await mkdtemp(join(tmpdir(), `${PRODUCT_NAME}-browser-`));
     const port = await freePort();
     const endpoint = `http://127.0.0.1:${port}`;
-    const headless = process.env[`${ENV_PREFIX}_HEADLESS`] === 'true';
     const owner = await chromium.launchPersistentContext(profileDir, {
       channel: process.env[`${ENV_PREFIX}_BROWSER_CHANNEL`] || 'chrome',
-      headless,
+      headless: true,
       args: [`--remote-debugging-port=${port}`],
     });
     try {

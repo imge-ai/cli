@@ -41,17 +41,19 @@ function openBrowser(url: string) {
   child.unref();
 }
 
-export async function startPlayer(options: { quiet?: boolean } = {}) {
+export async function startPlayer(options: { quiet?: boolean } = {}): Promise<() => Promise<void>> {
   const url = `http://localhost:${PLAYER_PORT}`;
   const log = (message: string) => options.quiet ? console.error(message) : console.log(message);
   try {
     const response = await fetch(`http://127.0.0.1:${PLAYER_PORT}/api/meta`, { signal: AbortSignal.timeout(300) });
-    if (response.ok && (await response.json() as {name?: string}).name === PRODUCT_NAME) { openBrowser(url); log(`${PRODUCT_NAME} replay: ${url}`); return; }
+    if (response.ok && (await response.json() as {name?: string}).name === PRODUCT_NAME) { openBrowser(url); log(`${PRODUCT_NAME} replay: ${url}`); return async () => {}; }
   } catch { /* Start the local server. */ }
+  let server: ReturnType<typeof serve>;
   await new Promise<void>((resolve, reject) => {
-    const server = serve({ fetch: app.fetch, port: PLAYER_PORT, hostname: '127.0.0.1' }, () => resolve());
+    server = serve({ fetch: app.fetch, port: PLAYER_PORT, hostname: '127.0.0.1' }, () => resolve());
     server.once('error', reject);
   });
   openBrowser(url);
   log(`${PRODUCT_NAME} replay: ${url}`);
+  return () => new Promise(resolve => server.close(() => resolve()));
 }

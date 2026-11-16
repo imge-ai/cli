@@ -56,3 +56,13 @@ test('uninstall removes only imge and preserves other MCP servers', async () => 
   expect(toml).not.toContain('[mcp_servers.imge]');
   expect(toml).toContain('[mcp_servers.other]');
 });
+
+test('setup persists a custom recording directory in the selected client config', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'imge-datadir-'));
+  const dataDir = join(home, 'custom recordings');
+  const env = { ...process.env, IMGE_CONFIG_HOME: home, IMGE_NO_OPEN: '1' };
+  const setup = spawnSync('node', [resolve('dist/cli.js'), 'setup', '--client', 'cursor', '--data-dir', dataDir, '--yes'], { env, encoding:'utf8' });
+  expect(setup.status).toBe(0);
+  const data = JSON.parse(await readFile(join(home, '.cursor/mcp.json'), 'utf8'));
+  expect(data.mcpServers.imge.env.IMGE_HOME).toBe(dataDir);
+});
