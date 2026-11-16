@@ -1,78 +1,72 @@
 # imge
 
-![An agent clicks Add to cart, the cart stays empty, and the replay marks two matching buttons.](assets/demo.gif)
+![A recorded browser agent session](assets/demo.gif)
 
-**See what your agent saw.**
+**See what your agent saw.** imge records browser actions made through its Playwright MCP proxy and lets you replay the screenshots alongside the accessibility text the agent received. Sessions stay on your machine.
 
-Session replay for browser agents, on your machine. No SDK, no account, no cloud.
+## Install
 
-## Install in Codex
-
-Run these commands from this repository:
+Requires Node.js 20+ and an MCP client. Install directly with NPX:
 
 ```bash
-bun install
-bun run build
-codex mcp add imge -- node "$PWD/dist/cli.js" mcp
-codex mcp get imge
-node dist/cli.js
+npx --yes @imge/cli@latest setup --client codex
 ```
 
-`codex mcp add` saves the MCP server in Codex's config. Codex starts the proxy when the agent calls its browser tools. The last command opens the session player at `http://localhost:4747`. Open a new Codex session and ask:
+Replace `codex` with `cursor`, `claude-code`, `claude-desktop`, or `vs-code`. Omit `--client` to configure all five. The setup command shows the proposed config and asks before writing it. Restart your agent after installation.
 
-> Use the imge browser tools to open https://example.com and test the add-to-cart flow.
+Alternatively, paste this sentence into your AI coding agent:
 
-The sentence in chat does not install anything; it tells Codex to use the already configured MCP tools. The first browser action creates a session. Refresh the player to see it. If `codex mcp get imge` already shows the server, skip the `add` command. To configure Claude Code, Claude Desktop, Cursor, or VS Code instead, run `node dist/cli.js setup`; it prints config snippets and writes them only after confirmation, preserving existing entries and backing up existing files.
+> Install imge for this agent. Run `npx --yes @imge/cli@latest setup --client <client>`, confirm the MCP config change, then show me how to use imge and uninstall it.
 
-For a manual MCP config, the command is:
+The agent still runs the same NPX command; the sentence is a convenient way to ask it to do the setup. If the agent cannot approve the interactive setup prompt, run the printed command yourself in a terminal.
 
-```json
-{
-  "mcpServers": {
-    "imge": {
-      "command": "node",
-      "args": ["/absolute/path/to/this-repo/dist/cli.js", "mcp"]
-    }
-  }
-}
+### Client configuration
+
+| Client | Config file | Direct command |
+|---|---|---|
+| Codex | `~/.codex/config.toml` | `npx --yes @imge/cli@latest setup --client codex` |
+| Cursor | `~/.cursor/mcp.json` | `npx --yes @imge/cli@latest setup --client cursor` |
+| Claude Code | `~/.claude.json` | `npx --yes @imge/cli@latest setup --client claude-code` |
+| Claude Desktop | Claude's desktop config | `npx --yes @imge/cli@latest setup --client claude-desktop` |
+| VS Code | `~/.copilot/mcp-config.json` | `npx --yes @imge/cli@latest setup --client vs-code` |
+
+The installed MCP entry runs `npx --yes @imge/cli@latest mcp`. imge backs up an existing config before editing it and leaves other MCP servers in place.
+
+## Record a session
+
+Ask a configured agent:
+
+> Use the imge browser tools to open https://example.com, describe the page, and click a link.
+
+The agent must use the **imge MCP browser tools**. Its built-in browser will not be recorded. In another terminal, open the local player:
+
+```bash
+npx --yes @imge/cli@latest
 ```
 
-```toml
-[mcp_servers.imge]
-command = "node"
-args = ["/absolute/path/to/this-repo/dist/cli.js", "mcp"]
+The player runs at `http://localhost:4747`. One MCP process creates one session in `~/.imge/mcp/sessions/<sessionId>/`, with `steps.jsonl` and a PNG for each action. The player shows the screenshot and the text the agent saw, plus errors and same-name warnings. Password and card fields are masked in saved text and screenshots.
+
+## Uninstall
+
+After installing the MCP server, remove its entry from the same client config and restart the agent:
+
+```bash
+npx --yes @imge/cli@latest uninstall --client codex
 ```
 
-The setup command replaces the example path with this checkout's actual path. This is a local checkout; use `node dist/cli.js` for now. Nothing has been published to npm. The built files run on Node 20+ without Bun.
+Use the relevant client name from the table above, or omit `--client` to remove imge from all five. The command asks before changing files, backs up changed configs, and preserves other MCP entries. To remove a globally installed npm executable, also run `npm uninstall -g @imge/cli` if you installed it globally. NPX itself needs no global uninstall.
 
-**Local only. No account, no cloud, no telemetry.**
-
-## Use it with your agent
-
-Ask a configured agent to open a site with the `imge` browser tools. Open `http://localhost:4747` to play the saved session. Each step pairs the screenshot taken after the action with the accessibility snapshot returned to the agent. The top control chooses **Both**, **Screenshot**, or **Agent view**; these are views of the same step. The theme button switches between light and dark. The action line shows the target, errors, and warnings for elements with the same name or no name. Space plays or pauses; arrow keys move between steps. Session and step are saved in the URL.
-
-The proxy forwards the official Playwright MCP tool calls and results unchanged. It launches Chrome, connects Playwright MCP through CDP, and takes screenshots from a separate connection. It never calls the snapshot tool on the agent's behalf, so its element refs stay valid. The browser screenshot is taken after each action. One proxy process creates one session in `~/.imge/mcp/sessions/<sessionId>/` with `steps.jsonl` and one PNG per step.
-
-Typed password and payment card values are masked in saved text. Their fields are covered with solid boxes in screenshots. The proxy only sees MCP tool calls and results; it does not see browser network traffic. `src/cdp-extension.ts` marks the single place for a future CDP listener.
-
-## Supported clients
-
-Claude Code, Claude Desktop, Cursor, VS Code agents, and Codex can connect to the stdio MCP server. It works with any client that supports stdio MCP. It does not cover agents using their own built-in or cloud browser, including ChatGPT agent, Claude in Chrome, and Comet.
-
-## Who it helps
-
-- Developers can see why a browser agent clicked the wrong element.
-- E-commerce and web teams can watch an agent try a size picker, add to cart, and checkout flow, then find where it gets stuck.
-- Web analysts can replay the same journey; tracking hits are reserved for a later version.
+Saved sessions are independent of the MCP config. To delete them, run `npx --yes @imge/cli@latest clear` and confirm. This deletes recordings under `~/.imge/mcp/sessions/`.
 
 ## Commands
 
 | Command | Action |
 |---|---|
-| `node dist/cli.js setup` | Print client configs and optionally add them after confirmation. |
-| `node dist/cli.js mcp` | Run the stdio proxy. Extra arguments pass to Playwright MCP. |
-| `node dist/cli.js` | Open the player at `http://localhost:4747`. |
-| `node dist/cli.js clear` | Delete local sessions after confirmation. |
+| `npx --yes @imge/cli@latest setup [--client <name>]` | Install the MCP entry. |
+| `npx --yes @imge/cli@latest uninstall [--client <name>]` | Remove the MCP entry. |
+| `npx --yes @imge/cli@latest mcp` | Run the stdio browser proxy. |
+| `npx --yes @imge/cli@latest` | Open the local player. |
+| `npx --yes @imge/cli@latest clear` | Delete recordings after confirmation. |
 
 ## Development
 
@@ -83,8 +77,6 @@ bun test
 bun run build
 ```
 
-The build emits plain ESM for Node 20+. Bun is only used to develop, test, and build. Tests compare real Playwright MCP results and refs with and without the proxy, verify steps and screenshots, and check sensitive field masking. A real Codex task against the included store demo produced a session where the first “Add to cart” click left the cart at zero and showed “Choose a size first.”
+The build runs on Node 20+ without Bun. The proxy forwards Playwright MCP calls and results without modifying what the agent sees. It launches Chrome through CDP and captures screenshots from a separate connection. It does not capture browser network traffic or agents using their own cloud browser.
 
-## Later
-
-Network requests, other MCP tools, tracking hits, and deeper DOM recording.
+MIT licensed. Source: [imge-ai/cli](https://github.com/imge-ai/cli).

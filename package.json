@@ -1,9 +1,11 @@
 {
-  "name": "imge",
+  "name": "@imge/cli",
   "version": "0.1.0",
   "description": "Local session replay for browser agents",
   "type": "module",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/imge-ai/cli.git" },
+  "homepage": "https://imge.sh",
   "engines": {
     "node": ">=20"
   },
