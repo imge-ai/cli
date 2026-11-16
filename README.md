@@ -38,13 +38,7 @@ Ask a configured agent:
 
 > Use the imge browser tools to open https://example.com, describe the page, and click a link.
 
-The agent must use the **imge MCP browser tools**. Its built-in browser will not be recorded. In another terminal, open the local player:
-
-```bash
-npx --yes @imge/cli@latest
-```
-
-The player runs at `http://localhost:4747`. One MCP process creates one session in `~/.imge/mcp/sessions/<sessionId>/`, with `steps.jsonl` and a PNG for each action. The player shows the screenshot and the text the agent saw, plus errors and same-name warnings. Password and card fields are masked in saved text and screenshots.
+The agent must use the **imge MCP browser tools**. Its built-in browser will not be recorded. After the first browser action, imge opens the controlled browser and replay player automatically at `http://localhost:4747`. The player refreshes sessions and steps as they are recorded, and the agent is instructed to include a replay link in its final response. You can open the player any time with `npx --yes @imge/cli@latest`. One MCP process creates one session in `~/.imge/mcp/sessions/<sessionId>/`, with `steps.jsonl` and a PNG for each action. The player shows the screenshot and the text the agent saw, plus errors and same-name warnings. Password and card fields are masked in saved text and screenshots.
 
 ## Uninstall
 
@@ -77,6 +71,6 @@ bun test
 bun run build
 ```
 
-The build runs on Node 20+ without Bun. The proxy forwards Playwright MCP calls and results without modifying what the agent sees. It launches Chrome through CDP and captures screenshots from a separate connection. It does not capture browser network traffic or agents using their own cloud browser.
+The build runs on Node 20+ without Bun. The controlled Chrome window is visible by default; set `IMGE_HEADLESS=true` to hide it. The replay UI opens after the first recorded action and refreshes new sessions and steps automatically. The proxy forwards Playwright MCP calls and results without modifying what the agent sees. It launches Chrome through CDP and captures screenshots from a separate connection. It does not capture browser network traffic or agents using their own cloud browser.
 
 MIT licensed. Source: [imge-ai/cli](https://github.com/imge-ai/cli).

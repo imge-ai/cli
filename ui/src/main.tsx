@@ -62,8 +62,34 @@ function App() {
   });
   const [playing, setPlaying] = useState(false);
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem(`${__PRODUCT_NAME__}-theme`, theme); }, [theme]);
-  useEffect(() => { fetch('/api/sessions').then(r => r.json()).then((items:Session[]) => { setSessions(items); setSelected(current => current && items.some(x => x.id === current) ? current : items[0]?.id || ''); }); }, []);
-  useEffect(() => { if (!selected) return; fetch(`/api/sessions/${encodeURIComponent(selected)}/steps`).then(r => r.json()).then((items:Step[]) => { setSteps(items); setAt(current => Math.min(current, Math.max(0, items.length-1))); }); }, [selected]);
+  useEffect(() => {
+    let previousLatest = '';
+    const refresh = async () => {
+      try {
+        const items = await fetch('/api/sessions').then(r => r.json()) as Session[];
+        const latest = items[0]?.id || '';
+        setSessions(items);
+        setSelected(current => !current || current === previousLatest ? latest : items.some(item => item.id === current) ? current : latest);
+        previousLatest = latest;
+      } catch { /* The local player can start before the first session exists. */ }
+    };
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!selected) return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const items = await fetch(`/api/sessions/${encodeURIComponent(selected)}/steps`).then(r => r.json()) as Step[];
+        if (active) { setSteps(items); setAt(current => Math.min(current, Math.max(0, items.length-1))); }
+      } catch { /* A session may be written while the player is refreshing. */ }
+    };
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 1000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [selected]);
   useEffect(() => { if (!selected) return; const next = new URL(location.href); next.searchParams.set('s', selected); next.searchParams.set('step', String(at + 1)); history.replaceState(null, '', next); }, [selected, at]);
   useEffect(() => { if (!playing) return; const timer = setInterval(() => setAt(current => { if (current >= steps.length-1) { setPlaying(false); return current; } return current+1; }), 1000); return () => clearInterval(timer); }, [playing, steps.length]);
   useEffect(() => {

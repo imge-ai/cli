@@ -6,6 +6,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BrowserBridge } from './browser.js';
+import { startPlayer } from './player.js';
 import { ENV_PREFIX, PRODUCT_NAME, VERSION } from './config.js';
 import { newSessionId, saveStep } from './storage.js';
 import { extractAgentView, mergeSnapshotState, targetFromSnapshot } from './snapshot.js';
@@ -33,9 +34,12 @@ export async function serveProxy(extraArgs: string[] = []) {
   const upstreamTransport = new StdioClientTransport({ command: process.execPath, args: [playwrightCli, `--cdp-endpoint=${bridge.endpoint}`, ...extraArgs], stderr: 'inherit' });
   try { await upstream.connect(upstreamTransport); }
   catch (error) { await bridge.close(); throw error; }
-  const downstream = new Server({ name: PRODUCT_NAME, version: VERSION }, { capabilities: { tools: { listChanged: true } } });
+  const downstream = new Server({ name: PRODUCT_NAME, version: VERSION }, {
+    capabilities: { tools: { listChanged: true } },
+    instructions: `imge records browser sessions locally. The replay interface starts automatically after the first browser action at http://localhost:4747. Show the user this Markdown link in your final response: [Open the imge session replay](http://localhost:4747).`,
+  });
   const sessionId = newSessionId();
-  let index = 0, lastSnapshot = '', firstUrl: string | null = null;
+  let index = 0, lastSnapshot = '', firstUrl: string | null = null, playerStarted = false;
   let pending: Promise<unknown> = Promise.resolve();
   downstream.setRequestHandler(ListToolsRequestSchema, async () => upstream.listTools());
   downstream.setRequestHandler(CallToolRequestSchema, async request => {
@@ -100,6 +104,11 @@ export async function serveProxy(extraArgs: string[] = []) {
       };
       try { await saveStep(sessionId, step, captured.png); }
       catch (error) { console.error(`${PRODUCT_NAME}: could not save step: ${error instanceof Error ? error.message : String(error)}`); }
+      if (!playerStarted) {
+        playerStarted = true;
+        try { await startPlayer({ quiet: true }); }
+        catch (error) { console.error(`${PRODUCT_NAME}: replay UI failed to start: ${error instanceof Error ? error.message : String(error)}`); }
+      }
       if (thrown) throw thrown;
       return result!;
     });

@@ -1,10 +1,13 @@
 {
   "name": "@imge/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local session replay for browser agents",
   "type": "module",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/imge-ai/cli.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imge-ai/cli.git"
+  },
   "homepage": "https://imge.sh",
   "engines": {
     "node": ">=20"
@@ -12,7 +15,14 @@
   "bin": {
     "imge": "dist/cli.js"
   },
-  "files": ["dist", "ui/dist", "ui/src/FONT-LICENSE.txt", "README.md", "LICENSE", "assets/demo.gif"],
+  "files": [
+    "dist",
+    "ui/dist",
+    "ui/src/FONT-LICENSE.txt",
+    "README.md",
+    "LICENSE",
+    "assets/demo.gif"
+  ],
   "scripts": {
     "build": "bun build src/cli.ts --target=node --packages=external --outdir=dist && vite build",
     "test": "bun test",
