@@ -42,7 +42,7 @@ async function save(config: Config, original: string | null, updated: string) {
 export async function setup(args: string[] = []) {
   const targets = selected(args);
   for (const config of targets) console.log(`\n${config.label} · ${config.file}\n${snippet(config)}\n`);
-  if (!(await confirm(`Add imge to ${targets.map(config => config.label).join(', ')}?`))) return;
+  if (!args.includes('--yes') && !(await confirm(`Add imge to ${targets.map(config => config.label).join(', ')}?`))) return;
   for (const config of targets) {
     const original = await readFile(config.file, 'utf8').catch(() => null);
     if (config.kind === 'toml') {
@@ -64,7 +64,7 @@ export async function setup(args: string[] = []) {
 
 export async function uninstall(args: string[] = []) {
   const targets = selected(args);
-  if (!(await confirm(`Remove imge from ${targets.map(config => config.label).join(', ')}?`))) return;
+  if (!args.includes('--yes') && !(await confirm(`Remove imge from ${targets.map(config => config.label).join(', ')}?`))) return;
   for (const config of targets) {
     const original = await readFile(config.file, 'utf8').catch(() => null);
     if (!original) { console.log(`${config.label}: not configured`); continue; }

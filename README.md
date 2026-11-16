@@ -16,9 +16,9 @@ Replace `codex` with `cursor`, `claude-code`, `claude-desktop`, or `vs-code`. Om
 
 Alternatively, paste this sentence into your AI coding agent:
 
-> Install imge for this agent. Run `npx --yes @imge/cli@latest setup --client <client>`, confirm the MCP config change, then show me how to use imge and uninstall it.
+> Install imge for this agent. Identify whether you are Codex, Cursor, Claude Code, Claude Desktop, or VS Code. Run `npx --yes @imge/cli@latest setup --client <client> --yes`, then show me how to use imge and uninstall it.
 
-The agent still runs the same NPX command; the sentence is a convenient way to ask it to do the setup. If the agent cannot approve the interactive setup prompt, run the printed command yourself in a terminal.
+The agent still runs the same NPX command; the sentence is a convenient way to ask it to do the setup. `--yes` on the setup command skips imge's interactive confirmation because the instruction authorizes the config change. The first `--yes` is for NPX's package install prompt.
 
 ### Client configuration
 
